@@ -2,6 +2,24 @@ from tkinter import *
 from tkinter import messagebox
 import random
 import pyperclip
+import json
+
+
+# ------------------------------ SEARCH WEBSITE --------------------------------- #
+def search():
+    website = website_entry.get()
+    try:
+        with open("passwords.json", "r") as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showerror(title="Error", message="No data file found")
+    else:
+        if website in data:
+            saved_email = data[website]["email"]
+            saved_password = data[website]["password"]
+            messagebox.showinfo(title=website, message=f"email: {saved_email}\npassword: {saved_password}")
+        else:
+            messagebox.showinfo(title=website, message=f"No data for {website} found")
 
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
@@ -29,6 +47,10 @@ def add():
     website = website_entry.get()
     email_ = email_entry.get()
     password = password_entry.get()
+    new_data = {website: {"email": email_,
+                          "password": password
+                          }
+                }
 
     if len(password) == 0 or len(website) == 0:
         messagebox.showinfo(title="Empty field", message=f"please fill all the fields")
@@ -37,11 +59,23 @@ def add():
                                        message=f"Email: {email_}\nPassword: {password}\nDo you want to save?")
 
         if is_ok:
-            with open("passwords.txt", "a") as data:
-                data.write(f"{website}  |     {email_}    |   {password}")
-            website_entry.delete(0, END)
-            password_entry.delete(0, END)
-            print("data added successfully")
+            try:
+                with open("passwords.json", "r") as data_file:
+                    #reading old data
+                    data = json.load(data_file)
+            except FileNotFoundError:
+                with open("passwords.json", "w") as data_file:
+                    json.dump(new_data, data_file, indent=4)
+            else:
+                #updating old data
+                data.update(new_data)
+
+                with open("passwords.json", "w") as data_file:
+                    #saving updated data into file
+                    json.dump(data, data_file, indent=4)
+            finally:
+                website_entry.delete(0, END)
+                password_entry.delete(0, END)
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -64,19 +98,27 @@ email_label.grid(row=2, column=0)
 password_label = Label(text="Password:")
 password_label.grid(row=3, column=0)
 
-website_entry = Entry(width=52)
-website_entry.grid(row=1, column=1, columnspan=2)
+website_entry = Entry(width=33)
+website_entry.grid(row=1, column=1, )
 website_entry.focus()
 
 email_entry = Entry(width=52)
 email_entry.grid(row=2, column=1, columnspan=2)
-email_entry.insert(0, "katyayani.kumari03@gmail.com")  # 0 IS THE INDEX WHERE WE ARE INSERTING THE STRING
+email_entry.insert(0, "example@gmail.com")  # 0 IS THE INDEX WHERE WE ARE INSERTING THE STRING
 
 password_entry = Entry(width=33)
 password_entry.grid(row=3, column=1)
 
 generate_button = Button(text="Generate Password", command=generate_password)
 generate_button.grid(row=3, column=2)
+
+add_button = Button(text="Add", width=44, command=add)
+add_button.grid(row=4, column=1, columnspan=2)
+
+search_button = Button(text="Search", width=15, command=search)
+search_button.grid(row=1, column=2)
+
+window.mainloop()
 
 add_button = Button(text="Add", width=44, command=add)
 add_button.grid(row=4, column=1, columnspan=2)
